@@ -16,11 +16,15 @@
   <PropertyGroup Condition="'$(TargetOS)'=='Linux'">
     <XunitPerfAnalysisPackageId>Microsoft.DotNet.xunit.performance.analysis.cli</XunitPerfAnalysisPackageId>
     <XunitPerfAnalysisPath>$(PackagesDir)$(XunitPerfAnalysisPackageId)/$(XunitPerfAnalysisPackageVersion)/lib/netstandard1.3/Microsoft.DotNet.xunit.performance.analysis.cli.dll</XunitPerfAnalysisPath>
+	<BenchviewPackageId>Microsoft.BenchView.JSONFormat</BenchviewPackageId>
+	<BenchviewDir>$(PackagesDir)$(BenchviewPackageId)/tools</BenchviewDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetOS)'=='Windows_NT'">
     <XunitPerfAnalysisPackageId>Microsoft.DotNet.xunit.performance.analysis</XunitPerfAnalysisPackageId>
     <XunitPerfAnalysisPath>$(PackagesDir)$(XunitPerfAnalysisPackageId)/$(XunitPerfAnalysisPackageVersion)/tools/xunit.performance.analysis.exe</XunitPerfAnalysisPath>
     <XunitPerfAnalysisDir>$(PackagesDir)$(XunitPerfAnalysisPackageId)/$(XunitPerfAnalysisPackageVersion)/tools</XunitPerfAnalysisDir>
+	<BenchviewPackageId>Microsoft.BenchView.JSONFormat</BenchviewPackageId>
+	<BenchviewDir>C:\Tools\$(BenchviewPackageId)\tools</BenchviewDir>
   </PropertyGroup>
 
 
@@ -100,6 +104,16 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetOS)'=='Windows_NT'">
     <TestCommandLines Include = "IF EXIST %HELIX_CORRELATION_PAYLOAD%\RunnerScripts\xunitrunner-perf\postprocessperfresults.py %HELIX_PYTHONPATH% %HELIX_CORRELATION_PAYLOAD%\RunnerScripts\xunitrunner-perf\postprocessperfresults.py --csvDir $(XunitPerfAnalysisCsvDir)"></TestCommandLines>
+  </ItemGroup>
+    <ItemGroup Condition="'$(TargetOS)'=='Windows_NT' and '$(LogToBenchview)' == 'true'">
+    <TestCommandLines Include = "python $(BenchviewDir)\measurement.py xunit testResults.xml --better desc --drop-first-value"></TestCommandLines>
+	<TestCommandLines Include = "python $(BenchviewDir)\submission.py measurement.json --build build.json --machine-data machinedata.json --metadata submission-metadata.json --group &quot;CoreFx&quot; --type &quot;$(BenchviewRuntype)&quot; --config-name &quot;$(ConfigurationGroup)&quot; --config Configuration &quot;$(ConfigurationGroup)&quot; --config OS &quot;$(TargetOS)&quot; -arch &quot;$(Platform)&quot; --machinepool &quot;PerfSnake&quot;"></TestCommandLines>
+	<TestCommandLines Include = "python $(BenchviewDir)\upload.py submission.json --container corefx"></TestCommandLines>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetOS)'=='Linux' and '$(LogToBenchview)' == 'true'" >
+    <TestCommandLines Include = "python $(BenchviewDir)/measurement.py xunit testResults.xml --better desc --drop-first-value"></TestCommandLines>
+	<TestCommandLines Include = "python $(BenchviewDir)/submission.py measurement.json --build /build.json --machine-data /machinedata.json --metadata /submission-metadata.json --group &quot;CoreFx&quot; --type &quot;$(BenchviewRuntype)&quot; --config-name &quot;$(ConfigurationGroup)&quot; --config Configuration &quot;$(ConfigurationGroup)&quot; --config OS &quot;$(TargetOS)&quot; -arch &quot;$(Platform)&quot; --machinepool &quot;PerfSnake&quot;"></TestCommandLines>
+	<TestCommandLines Include = "python $(BenchviewDir)/upload.py submission.json --container corefx"></TestCommandLines>
   </ItemGroup>
   <!-- Optimizations to configure Xunit for performance -->
   <ItemGroup Condition="'$(IncludePerformanceTests)' == 'true'">
